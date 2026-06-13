@@ -76,7 +76,7 @@ cd splitwise
     ```
     Inside `.env`, populate your PostgreSQL database connection string and secure token secret:
     ```env
-    PORT=5000
+    PORT=3000
     JWT_SECRET=your_jwt_signing_secret_here
     DATABASE_URL="postgresql://<username>:<password>@<host>:<port>/<db_name>?sslmode=require"
     ```
@@ -88,7 +88,7 @@ cd splitwise
     ```bash
     npm start
     ```
-    The server will start on [http://localhost:5000](http://localhost:5000).
+    The server will start on [http://localhost:3000](http://localhost:3000).
 
 ### 4. Frontend Setup
 1.  Open a new terminal session and navigate to the frontend directory:
@@ -101,8 +101,8 @@ cd splitwise
     ```
 3.  Configure environmental client endpoints by adding a `.env` file (Optional - defaults to local server):
     ```env
-    VITE_API_URL="http://localhost:5000/api"
-    VITE_SOCKET_URL="http://localhost:5000"
+    VITE_API_URL="http://localhost:3000/api"
+    VITE_SOCKET_URL="http://localhost:3000"
     ```
 4.  Start the Vite dev server:
     ```bash
