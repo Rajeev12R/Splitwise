@@ -58,8 +58,8 @@ Ensure you have the following installed on your machine:
 
 ### 2. Clone the Repository
 ```bash
-git clone https://github.com/ranjan/splitwise.git
-cd splitwise
+git clone https://github.com/Rajeev12R/Splitwise.git
+cd Splitwise
 ```
 
 ### 3. Backend Setup

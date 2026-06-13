@@ -51,3 +51,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch & CSV
+scratch/
+expenses_export.csv
