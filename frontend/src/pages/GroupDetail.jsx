@@ -54,6 +54,12 @@ export default function GroupDetail() {
   const [expenseError, setExpenseError] = useState('');
   const [addingExpense, setAddingExpense] = useState(false);
 
+  const [importOpen, setImportOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState('');
+
   const fetchData = async () => {
     try {
       const res = await api.get(`/groups/${groupId}`);
@@ -267,6 +273,65 @@ export default function GroupDetail() {
     }
   };
 
+  const handleCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportError('');
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setImporting(true);
+        const text = event.target.result;
+        const res = await api.post('/expenses/import-preview', {
+          groupId,
+          csvText: text
+        });
+        setPreviewData(res.data.parsedRows);
+      } catch (err) {
+        console.error(err);
+        setImportError(err.response?.data?.error || 'Failed to parse CSV file');
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImport = async () => {
+    if (!previewData || previewData.length === 0) return;
+    setImporting(true);
+    setImportError('');
+    try {
+      await api.post('/expenses/import-confirm', {
+        groupId,
+        rows: previewData
+      });
+      setPreviewData(null);
+      setImportOpen(false);
+      setImportSuccess('CSV data imported successfully!');
+      setTimeout(() => setImportSuccess(''), 5000);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      setImportError(err.response?.data?.error || 'Failed to import CSV data');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const toggleRowShouldImport = (index) => {
+    setPreviewData(prev => prev.map(row => 
+      row.index === index ? { ...row, shouldImport: !row.shouldImport } : row
+    ));
+  };
+
+  const updateRowField = (index, field, value) => {
+    setPreviewData(prev => prev.map(row => 
+      row.index === index ? { ...row, [field]: value } : row
+    ));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex justify-center items-center">
@@ -317,6 +382,12 @@ export default function GroupDetail() {
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">{group.name}</h1>
             <p className="text-slate-400 text-sm mt-2">{group.description || 'No description provided.'}</p>
 
+            {importSuccess && (
+              <div className="mt-4 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+                {importSuccess}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-3 mt-6">
               <button
                 onClick={() => setExpenseOpen(true)}
@@ -329,6 +400,12 @@ export default function GroupDetail() {
                 className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 font-semibold text-sm transition-all flex items-center gap-1.5 hover:scale-[1.01]"
               >
                 <CheckCircle className="w-4 h-4" /> Settle Up
+              </button>
+              <button
+                onClick={() => setImportOpen(true)}
+                className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-sm transition-all flex items-center gap-1.5 hover:scale-[1.01]"
+              >
+                <Compass className="w-4 h-4 text-emerald-400" /> Import CSV
               </button>
             </div>
           </div>
@@ -874,6 +951,156 @@ export default function GroupDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {importOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-fade-in overflow-y-auto">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative my-8">
+            <button
+              onClick={() => { setImportOpen(false); setPreviewData(null); setImportError(''); }}
+              className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="text-xl font-bold tracking-tight mb-1">Import Expenses</h3>
+            <p className="text-slate-400 text-sm mb-6">Upload expenses_export.csv to parse and review group data.</p>
+
+            {importError && (
+              <div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+                {importError}
+              </div>
+            )}
+
+            {!previewData ? (
+              <div className="border-2 border-dashed border-slate-800 rounded-2xl p-10 text-center flex flex-col items-center justify-center bg-slate-950/20">
+                <Compass className="w-10 h-10 text-slate-600 mb-3" />
+                <p className="text-sm font-semibold text-slate-300">Select your Splitwise CSV export</p>
+                <p className="text-xs text-slate-500 mt-1 mb-4">Make sure it matches the standard Spreetail CSV structure.</p>
+                <label className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs cursor-pointer transition-all shadow-md">
+                  Browse File
+                  <input 
+                    type="file" 
+                    accept=".csv" 
+                    onChange={handleCSVUpload} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/60 pb-3">
+                  <p>
+                    Parsed <span className="font-bold text-slate-200">{previewData.length}</span> rows. Review and toggle rows to import.
+                  </p>
+                  <button 
+                    onClick={() => setPreviewData(prev => prev.map(r => ({ ...r, shouldImport: true })))}
+                    className="text-emerald-400 font-semibold hover:underline"
+                  >
+                    Select All
+                  </button>
+                </div>
+
+                <div className="space-y-3.5 max-h-[50vh] overflow-y-auto pr-1.5">
+                  {previewData.map(row => (
+                    <div 
+                      key={row.index}
+                      className={`p-4 rounded-2xl border text-xs transition-all ${
+                        !row.shouldImport 
+                          ? 'bg-slate-950/20 border-slate-900 opacity-55' 
+                          : row.anomalies.length > 0 
+                            ? 'bg-amber-500/5 border-amber-500/20' 
+                            : 'bg-slate-950/40 border-slate-850'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-2.5">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-200">
+                          <input 
+                            type="checkbox"
+                            checked={row.shouldImport}
+                            onChange={() => toggleRowShouldImport(row.index)}
+                            className="w-4 h-4 rounded text-emerald-500 border-slate-800 accent-emerald-500"
+                          />
+                          Row #{row.index}: {row.description || '(No Description)'}
+                        </label>
+                        <div className="text-right shrink-0">
+                          <span className="font-extrabold text-slate-100">${parseFloat(row.amount).toFixed(2)}</span>
+                          <span className="text-[10px] text-slate-500 block">{row.currency}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-slate-400 mb-2">
+                        <div>
+                          <span className="text-slate-550 block text-[9px] uppercase font-bold mb-1">Payer</span>
+                          <input 
+                            type="text"
+                            value={row.paidBy}
+                            onChange={(e) => updateRowField(row.index, 'paidBy', e.target.value)}
+                            className="w-full px-2 py-1 bg-slate-900 border border-slate-800 rounded text-[11px] outline-none text-slate-200"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-slate-550 block text-[9px] uppercase font-bold mb-1">Split With</span>
+                          <span className="text-[10px] text-slate-300 block truncate" title={row.splitWith.join('; ')}>
+                            {row.splitWith.join(', ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-[10px] text-slate-500 border-t border-slate-900/60 pt-2 mt-2">
+                        <div>
+                          <span className="font-semibold text-slate-600">Date:</span> {row.date}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-600">Type:</span> {row.splitType || 'SETTLEMENT'}
+                        </div>
+                        <label className="flex items-center gap-1.5 cursor-pointer ml-auto text-[10px] text-slate-400 hover:text-slate-350">
+                          <input 
+                            type="checkbox"
+                            checked={row.isSettlement}
+                            onChange={(e) => updateRowField(row.index, 'isSettlement', e.target.checked)}
+                            className="w-3.5 h-3.5 rounded text-emerald-500 border-slate-800"
+                          />
+                          Is Settlement
+                        </label>
+                      </div>
+
+                      {row.anomalies.length > 0 && (
+                        <div className="mt-2.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/10 space-y-1">
+                          <p className="text-[9px] font-bold text-amber-400 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 shrink-0" /> Anomalies Detected:
+                          </p>
+                          {row.anomalies.map((an, i) => (
+                            <p key={i} className="text-[10px] text-slate-300 leading-tight">
+                              &bull; {an.message}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-slate-800/60">
+                  <button
+                    type="button"
+                    onClick={() => { setPreviewData(null); setImportError(''); }}
+                    className="flex-1 py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 font-semibold text-sm transition-all"
+                  >
+                    Reset Upload
+                  </button>
+                  <button
+                    onClick={handleConfirmImport}
+                    disabled={importing || previewData.filter(r => r.shouldImport).length === 0}
+                    className="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                  >
+                    {importing ? 'Importing...' : `Confirm Import (${previewData.filter(r => r.shouldImport).length} rows)`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
