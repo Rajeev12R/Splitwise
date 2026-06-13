@@ -4,7 +4,7 @@ Splitify is a simplified, high-fidelity Splitwise-inspired application built for
 
 ## 🚀 Deployed URL & Repositories
 *   **Backend Deployed App**: [https://splitwise-4lrc.onrender.com](https://splitwise-4lrc.onrender.com)
-*   **Public Deployed App**: *Pending deployment (Vercel)*
+*   **Public Deployed App**: [https://splitwise-gold-seven.vercel.app](https://splitwise-gold-seven.vercel.app)
 *   **GitHub Repository**: [https://github.com/Rajeev12R/Splitwise](https://github.com/Rajeev12R/Splitwise)
 
 ---
