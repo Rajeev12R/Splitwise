@@ -3,8 +3,9 @@
 Splitify is a simplified, high-fidelity Splitwise-inspired application built for Spreetail's Software Engineering Intern assignment. It allows users to manage shared expenses, track group-wise and individual balances, resolve debts through a transaction minimization engine, and chat in real-time about specific expenses.
 
 ## 🚀 Deployed URL & Repositories
-*   **Public Deployed App**: [https://splitify-client.vercel.app](https://splitify-client.vercel.app) *(Placeholder)*
-*   **GitHub Repository**: [https://github.com/ranjan/splitwise](https://github.com/ranjan/splitwise) *(Placeholder)*
+*   **Backend Deployed App**: [https://splitwise-4lrc.onrender.com](https://splitwise-4lrc.onrender.com)
+*   **Public Deployed App**: *Pending deployment (Vercel)*
+*   **GitHub Repository**: [https://github.com/Rajeev12R/Splitwise](https://github.com/Rajeev12R/Splitwise)
 
 ---
 
